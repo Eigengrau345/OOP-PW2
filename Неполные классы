@@ -1,0 +1,74 @@
+import requests
+import webbrowser
+
+class Input():
+    def __init__(self, inp):
+        self.inp = inp
+
+    def get_query(self):
+        self.inp = input("Введите поисковой запрос: ")
+        return self.inp
+
+class Search():
+    url = "https://ru.wikipedia.org/w/api.php"
+    def search(self, query):
+        params = {
+            "action": "query",
+            "list": "search",
+            "srsearch": query,
+            "format": "json",
+            "utf8": ""
+        }
+        response = requests.get(self.url, params=params)
+        return response.json()
+
+class Processing():
+    def process(self, data):
+        results = data.get("query", {}).get("search", [])
+        return results
+
+class Output():
+    def print_res(self, results):
+        print("Результаты поиска:")
+        if not results:
+            print("Ничего не найдено.")
+            return False
+
+        for result in results:
+            print("====================================")
+            print(f"Заголовок: {result['title']}")
+            print(f"ID: {result['pageid']}")
+        print("====================================")
+        return True
+
+class Browser():
+    def open_page(self, pageid):
+        url = f"https://ru.wikipedia.org/?curid={pageid}"
+        webbrowser.open(url)
+
+class Interface():
+    def __init__(self):
+        self.input = Input()
+        self.search = Search()
+        self.processing = Processing()
+        self.output = Output()
+        self.browser = Browser()
+
+    def main(self):
+        query = self.input.get_query()
+        json_data = self.search.search(query)
+        results = self.processing.process(json_data)
+        self.output.print_res(results)
+        if self.output.print_res(results) == False:
+            return 1
+        while True:
+            choice = int(input("Введите ID страницы, которую хотите открыть в браузере:"))
+            if choice<0 or choice>len(results):
+                print("Неверный ID страницы.")               
+            break
+        self.browser.open_page(choice)
+        return 0
+
+if __name__ == "__main__":
+    interface = Interface()
+    interface.main()
